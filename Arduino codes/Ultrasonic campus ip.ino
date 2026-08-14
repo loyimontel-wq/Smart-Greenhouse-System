@@ -5,7 +5,7 @@
 const char* ssid = "Esme";
 const char* password = "12345678";
 
-String serverName = "http://10.1.1.69:5000/update_ultrasonic";
+String serverName = "http://10.1.1.69:5000/api/ultrasonic";
 
 #define TRIG 5
 #define ECHO 18
