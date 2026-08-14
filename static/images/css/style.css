@@ -1,0 +1,43 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial;
+    color:white;
+}
+
+/* BUTTONS */
+.btn{
+    padding:12px 20px;
+    text-decoration:none;
+    border-radius:8px;
+    font-weight:bold;
+    color:white;
+    transition:0.3s;
+}
+
+.green{
+    background:#22c55e;
+}
+
+.red{
+    background:#ef4444;
+}
+
+.blue{
+    background:#3b82f6;
+}
+
+.purple{
+    background:#a855f7;
+}
+
+/* CARD */
+.card{
+    background:#1e293b;
+    padding:20px;
+    border-radius:12px;
+}

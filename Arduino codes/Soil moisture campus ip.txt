@@ -1,0 +1,187 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// -----------------------------
+// LCD SETUP
+// -----------------------------
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// -----------------------------
+// WIFI
+// -----------------------------
+const char* ssid = "Esme";
+const char* password = "12345678";
+
+// Flask endpoint
+String server = "http://10.80.37.164:5000/api/soil";
+
+// -----------------------------
+// SOIL SENSOR
+// -----------------------------
+#define SOIL_PIN 34
+
+unsigned long lastSend = 0;
+const int sendInterval = 3000;
+
+// -----------------------------
+// SEND DATA FUNCTION
+// -----------------------------
+void sendData(int moisture, int rawValue) {
+
+  if (WiFi.status() == WL_CONNECTED) {
+
+    HTTPClient http;
+
+    http.begin(server);
+
+    http.addHeader("Content-Type", "application/json");
+
+    // JSON OBJECT
+    StaticJsonDocument<200> doc;
+
+    doc["moisture"] = moisture;
+    doc["raw"] = rawValue;
+
+    String jsonString;
+
+    serializeJson(doc, jsonString);
+
+    Serial.println("Sending JSON:");
+    Serial.println(jsonString);
+
+    int httpResponseCode = http.POST(jsonString);
+
+    Serial.print("HTTP Response: ");
+    Serial.println(httpResponseCode);
+
+    if (httpResponseCode > 0) {
+
+      String response = http.getString();
+
+      Serial.println("Server Response:");
+      Serial.println(response);
+    }
+    else {
+
+      Serial.print("POST Error: ");
+      Serial.println(httpResponseCode);
+    }
+
+    http.end();
+  }
+  else {
+
+    Serial.println("WiFi disconnected");
+  }
+}
+
+void setup() {
+
+  Serial.begin(115200);
+
+  // -----------------------------
+  // LCD
+  // -----------------------------
+  lcd.init();
+  lcd.backlight();
+
+  lcd.setCursor(0, 0);
+  lcd.print("Soil Monitor");
+
+  delay(2000);
+
+  // -----------------------------
+  // WIFI
+  // -----------------------------
+  WiFi.begin(ssid, password);
+
+  Serial.print("Connecting to WiFi");
+
+  while (WiFi.status() != WL_CONNECTED) {
+
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("\nWiFi Connected!");
+  Serial.print("ESP32 IP: ");
+  Serial.println(WiFi.localIP());
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("WiFi Connected");
+}
+
+void loop() {
+
+  // -----------------------------
+  // READ SENSOR
+  // -----------------------------
+  int rawValue = analogRead(SOIL_PIN);
+
+  // Convert to %
+  int moisturePercent = map(rawValue, 4095, 0, 0, 100);
+
+  // Prevent weird values
+  moisturePercent = constrain(moisturePercent, 0, 100);
+
+  // -----------------------------
+  // SERIAL OUTPUT
+  // -----------------------------
+  Serial.print("Raw Value: ");
+  Serial.print(rawValue);
+
+  Serial.print(" | Moisture: ");
+  Serial.print(moisturePercent);
+
+  Serial.println("%");
+
+  // -----------------------------
+  // LCD DISPLAY
+  // -----------------------------
+  lcd.clear();
+
+  lcd.setCursor(0, 0);
+  lcd.print("Moisture:");
+
+  lcd.setCursor(0, 1);
+  lcd.print(moisturePercent);
+  lcd.print("% ");
+
+  // Status display
+  if (moisturePercent < 30) {
+
+    lcd.print("DRY");
+
+    Serial.println("Status: DRY");
+  }
+
+  else if (moisturePercent < 60) {
+
+    lcd.print("OK");
+
+    Serial.println("Status: OK");
+  }
+
+  else {
+
+    lcd.print("WET");
+
+    Serial.println("Status: WET");
+  }
+
+  // -----------------------------
+  // SEND TO SERVER
+  // -----------------------------
+  if (millis() - lastSend > sendInterval) {
+
+    lastSend = millis();
+
+    sendData(moisturePercent, rawValue);
+  }
+
+  delay(2000);
+}

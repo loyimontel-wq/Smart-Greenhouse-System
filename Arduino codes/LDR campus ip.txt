@@ -1,0 +1,133 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+#include <ESP32Servo.h>
+
+// -------------------- WIFI --------------------
+const char* ssid = "Esme";
+const char* password = "12345678";
+
+String server = "http://10.80.37.164:5000/api/ldr";
+
+// -------------------- PINS --------------------
+#define LDR_LEFT 34
+#define LDR_RIGHT 39
+#define SERVO_PIN 13
+
+// -------------------- SERVO --------------------
+Servo myServo;
+int servoPos = 90;
+String directionText = "CENTER";
+
+// -------------------- TIMER --------------------
+unsigned long lastSend = 0;
+const int sendInterval = 3000;
+
+// -------------------- WIFI CONNECT --------------------
+void connectWiFi() {
+  WiFi.begin(ssid, password);
+
+  Serial.print("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("\nWiFi Connected!");
+  Serial.println(WiFi.localIP());
+}
+
+// -------------------- SEND DATA --------------------
+void sendData(int leftValue, int rightValue) {
+
+  if (WiFi.status() != WL_CONNECTED) return;
+
+  HTTPClient http;
+  http.begin(server);
+  http.addHeader("Content-Type", "application/json");
+
+  StaticJsonDocument<200> doc;
+  doc["left"] = leftValue;
+  doc["right"] = rightValue;
+  doc["direction"] = directionText;
+  doc["servo"] = servoPos;
+
+  String payload;
+  serializeJson(doc, payload);
+
+  int code = http.POST(payload);
+
+  Serial.print("HTTP: ");
+  Serial.println(code);
+
+  http.end();
+}
+
+// -------------------- SERVO CONTROL --------------------
+void moveServo(int target) {
+
+  if (target > 150) target = 150;
+  if (target < 30) target = 30;
+
+  if (servoPos < target) {
+    for (int p = servoPos; p <= target; p++) {
+      myServo.write(p);
+      delay(10);
+    }
+  } else {
+    for (int p = servoPos; p >= target; p--) {
+      myServo.write(p);
+      delay(10);
+    }
+  }
+
+  servoPos = target;
+}
+
+// -------------------- SETUP --------------------
+void setup() {
+
+  Serial.begin(115200);
+
+  pinMode(LDR_LEFT, INPUT);
+  pinMode(LDR_RIGHT, INPUT);
+
+  myServo.attach(SERVO_PIN);
+  myServo.write(90);
+
+  connectWiFi();
+}
+
+// -------------------- LOOP --------------------
+void loop() {
+
+  int leftValue = analogRead(LDR_LEFT);
+  int rightValue = analogRead(LDR_RIGHT);
+
+  Serial.print("L: ");
+  Serial.print(leftValue);
+  Serial.print(" R: ");
+  Serial.println(rightValue);
+
+  // ---------------- DECISION ----------------
+  if (leftValue > rightValue + 200) {
+    directionText = "LEFT";
+    moveServo(150);
+  }
+  else if (rightValue > leftValue + 200) {
+    directionText = "RIGHT";
+    moveServo(30);
+  }
+  else {
+    directionText = "CENTER";
+    moveServo(90);
+  }
+
+  // ---------------- SEND ----------------
+  if (millis() - lastSend > sendInterval) {
+    lastSend = millis();
+    sendData(leftValue, rightValue);
+  }
+
+  delay(300);
+}

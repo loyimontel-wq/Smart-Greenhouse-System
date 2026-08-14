@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}
+Temperature & Humidity
+{% endblock %}
+
+{% block head %}
+
+<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+    background:#0f172a;
+    color:white;
+    font-family:Arial;
+    padding:20px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+}
+
+.card{
+    background:#1e293b;
+    padding:20px;
+    border-radius:12px;
+}
+
+.value{
+    font-size:35px;
+    margin-top:10px;
+}
+
+canvas{
+    background:#111827;
+    border-radius:10px;
+    margin-top:20px;
+    padding:10px;
+}
+
+.nav{
+    margin-top:30px;
+    display:flex;
+    justify-content:right;
+    gap:15px;
+}
+
+.btn{
+    padding:12px 20px;
+    text-decoration:none;
+    border-radius:8px;
+    font-weight:bold;
+}
+
+.green{
+    background:#22c55e;
+    color:white;
+}
+
+.red{
+    background:#ef4444;
+    color:white;
+}
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="nav">
+    <a href="/" class="btn green">⬅ Dashboard</a>
+    <a href="/logout" class="btn red">Logout</a>
+</div>
+
+<div class="grid">
+
+<div class="card">
+    <h2> Temperature</h2>
+    <div class="value" id="temp">-- °C</div>
+    <canvas id="tempChart"></canvas>
+</div>
+
+<div class="card">
+    <h2> Humidity</h2>
+    <div class="value" id="hum">-- %</div>
+    <canvas id="humChart"></canvas>
+</div>
+
+</div>
+
+<script>
+
+const socket = io();
+
+let labels = [];
+
+let tempData = [];
+let humData = [];
+
+// ===============================
+// TEMP CHART
+// ===============================
+const tempChart = new Chart(document.getElementById("tempChart"), {
+
+    type: "line",
+
+    data: {
+        labels: labels,
+        datasets: [{
+            label: "Temperature °C",
+            data: tempData,
+            borderColor: "#ef4444",
+            backgroundColor: "rgba(239,68,68,0.2)",
+            tension: 0.3,
+            fill:true
+        }]
+    },
+
+    options:{
+        responsive:true,
+        animation:false
+    }
+});
+
+// ===============================
+// HUMIDITY CHART
+// ===============================
+const humChart = new Chart(document.getElementById("humChart"), {
+
+    type: "line",
+
+    data: {
+        labels: labels,
+        datasets: [{
+            label: "Humidity %",
+            data: humData,
+            borderColor: "#3b82f6",
+            backgroundColor: "rgba(59,130,246,0.2)",
+            tension: 0.3,
+            fill:true
+        }]
+    },
+
+    options:{
+        responsive:true,
+        animation:false
+    }
+});
+
+// ===============================
+// SOCKET RECEIVE
+// ===============================
+socket.on("sensor_snapshot", d => {
+
+    if(d.temp == null || d.hum == null){
+        return;
+    }
+
+    document.getElementById("temp").innerText =
+        d.temp.toFixed(1) + " °C";
+
+    document.getElementById("hum").innerText =
+        d.hum.toFixed(1) + " %";
+
+    labels.push(new Date().toLocaleTimeString());
+
+    tempData.push(d.temp);
+    humData.push(d.hum);
+
+    // Keep last 15 readings
+    if(labels.length > 15){
+
+        labels.shift();
+        tempData.shift();
+        humData.shift();
+    }
+
+    tempChart.update();
+    humChart.update();
+});
+
+</script>
+{% endblock %}

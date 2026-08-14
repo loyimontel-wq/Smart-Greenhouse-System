@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}
+Soil Moisture
+{% endblock %}
+
+{% block body_class %}
+soil-page
+{% endblock %}
+
+{% block head %}
+
+<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+    background:#0f172a;
+    color:white;
+    font-family:Arial;
+    padding:20px;
+}
+
+.card{
+    background:#1e293b;
+    padding:20px;
+    border-radius:12px;
+}
+
+.value{
+    font-size:40px;
+    margin-top:10px;
+}
+
+canvas{
+    background:#111827;
+    border-radius:10px;
+    margin-top:20px;
+}
+.nav{
+    margin-top:30px;
+    display:flex;
+    justify-content:right;
+    gap:15px;
+}
+
+.btn{
+    padding:12px 20px;
+    text-decoration:none;
+    border-radius:8px;
+    font-weight:bold;
+}
+
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="nav">
+    <a href="/" class="btn green">⬅ Dashboard</a>
+    <a href="/logout" class="btn red">Logout</a>
+</div>
+<div class="card">
+    <h1>🪴 Soil Moisture Live Graph</h1>
+
+    <div class="value" id="soil">--</div>
+
+    <canvas id="chart"></canvas>
+</div>
+
+<script>
+const socket = io();
+
+let labels = [];
+let values = [];
+
+const chart = new Chart(document.getElementById("chart"),{
+    type:"line",
+    data:{
+        labels:labels,
+        datasets:[{
+            label:"Soil Moisture %",
+            data:values,
+            borderColor:"#22c55e",
+            tension:0.3
+        }]
+    }
+});
+
+socket.on("sensor_snapshot", d => {
+
+    let val = d.soil || 0;
+
+    let status = " Normal";
+
+    if(val < 30) status = " Dry";
+    else if(val > 80) status = " Overwatered";
+
+    document.getElementById("soil").innerText =
+        val + "%  " + status;
+
+    labels.push(new Date().toLocaleTimeString());
+    values.push(val);
+
+    if(labels.length > 15){
+        labels.shift();
+        values.shift();
+    }
+
+    chart.update();
+});
+</script>
+
+{% endblock %}

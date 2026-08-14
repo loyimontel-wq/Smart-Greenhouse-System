@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+
+{% block title %}
+Smart Greenhouse Home
+{% endblock %}
+
+{% block head %}
+<style>
+
+body{
+    margin:0;
+    font-family:Arial;
+    background:#0f172a;
+    color:white;
+}
+
+/* CENTER LAYOUT */
+.container{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    text-align:center;
+}
+
+/* TITLE */
+h1{
+    font-size:38px;
+    margin-bottom:10px;
+}
+
+.subtitle{
+    color:#94a3b8;
+    margin-bottom:40px;
+}
+
+/* BUTTON GRID */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:15px;
+}
+
+/* BUTTONS */
+a{
+    display:block;
+    padding:18px 25px;
+    background:#1e293b;
+    border-radius:12px;
+    text-decoration:none;
+    color:white;
+    font-size:18px;
+    transition:0.3s;
+}
+
+a:hover{
+    transform:scale(1.05);
+    background:#334155;
+}
+
+.green{border-left:5px solid #22c55e;}
+.blue{border-left:5px solid #3b82f6;}
+.purple{border-left:5px solid #a855f7;}
+.red{border-left:5px solid #ef4444;}
+
+.bottom{
+    margin-top:30px;
+    color:#64748b;
+    font-size:13px;
+}
+
+</style>
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+    <h1> Smart Greenhouse</h1>
+    <div class="subtitle">Control & Monitoring System</div>
+
+    <div class="grid">
+
+        <a class="green" href="/">Live Dashboard</a>
+        <a class="blue" href="/dht"> Temperature & Humidity</a>
+        <a class="purple" href="/soil"> Soil Moisture</a>
+        <a class="blue" href="/water_level"> Water Level</a>
+        <a class="purple" href="/light"> Light Sensor</a>
+        <a class="red" href="/motion"> Motion Detection</a>
+
+    </div>
+
+    <div class="bottom">
+        System v1.0 | ESP32 + Flask + SocketIO
+    </div>
+
+</div>
+
+{% endblock %}
