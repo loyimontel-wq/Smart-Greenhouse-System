@@ -22,7 +22,7 @@ An IoT-based automated greenhouse monitoring system using an ESP32 microcontroll
 
 ## Hardware Setup
 - ESP32 powered via laptop USB (primary) with solar-charged battery backup.
-- All sensors connected to ESP32 GPIO pins as per the wiring diagram in `/hardware/`.
+- All sensors connected to ESP32 GPIO pins.
 
 ## Software Setup
 1. Install Arduino IDE and add ESP32 board support.
